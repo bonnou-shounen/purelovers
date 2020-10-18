@@ -2,6 +2,12 @@
 
 cli for [purelovers](https://www.purelovers.com).
 
+## install
+
+```bash
+$ go get -u github.com/bonnou-shounen/purelovers/cmd/purelovers
+```
+
 ## usage
 
 ```bash
