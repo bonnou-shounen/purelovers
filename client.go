@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -53,7 +54,7 @@ func (c *Client) Login(id, password string) error {
 	return nil
 }
 
-func (c *Client) Ajax(strURL string, values url.Values) error {
+func (c *Client) ajax(strURL string, values url.Values) error {
 	values.Add("ui", c.ui)
 	values.Add("uci", c.uci)
 
@@ -81,4 +82,18 @@ func (c *Client) Ajax(strURL string, values url.Values) error {
 	}
 
 	return nil
+}
+
+//nolint:unparam
+func (c *Client) parseNumber(str, prefix, suffix string) int {
+	if i := strings.Index(str, prefix); i >= 0 {
+		str = str[i+len(prefix):]
+		if j := strings.Index(str, suffix); j >= 0 {
+			str = str[:j]
+		}
+	}
+
+	num, _ := strconv.Atoi(str)
+
+	return num
 }

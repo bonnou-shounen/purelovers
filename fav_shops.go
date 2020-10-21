@@ -59,7 +59,7 @@ func (c *Client) getFavoriteShops(page int) ([]*Shop, int, error) {
 
 	doc.Find("p.shopList-nameDate a").Each(func(j int, a *goquery.Selection) {
 		href, _ := a.Attr("href")
-		shopID := c.getNum(href, "/shop/", "/")
+		shopID := c.parseNumber(href, "/shop/", "/")
 		name := a.Text()
 
 		if name != "" && shopID != 0 {
@@ -72,17 +72,17 @@ func (c *Client) getFavoriteShops(page int) ([]*Shop, int, error) {
 	}
 
 	href, _ := doc.Find("ul.page-move li:last-child a").Attr("href")
-	lastPage := c.getNum(href, "/page/", "/")
+	lastPage := c.parseNumber(href, "/page/", "/")
 
 	return shops, lastPage, nil
 }
 
 func (c *Client) AddFavoriteShop(shop *Shop) error {
-	return c.Ajax("https://www.purelovers.com/ajax/user/regist-favorite-shop/", shop.urlValues())
+	return c.ajax("https://www.purelovers.com/ajax/user/regist-favorite-shop/", shop.urlValues())
 }
 
 func (c *Client) DeleteFavoriteShop(shop *Shop) error {
-	return c.Ajax("https://www.purelovers.com/ajax/user-my-page/shop-delete/", shop.urlValues())
+	return c.ajax("https://www.purelovers.com/ajax/user-my-page/shop-delete/", shop.urlValues())
 }
 
 func (c *Client) AddFavoriteShops(shops []*Shop) {

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/jdxcode/netrc"
+	libnetrc "github.com/jdxcode/netrc"
 
 	"github.com/bonnou-shounen/purelovers"
 )
@@ -70,18 +70,18 @@ func fromNetrc() (id, password string) {
 	return
 }
 
-func getNetrc() *netrc.Netrc {
+func getNetrc() *libnetrc.Netrc {
 	netrcPath := getNetrcPath()
 	if netrcPath == "" {
 		return nil
 	}
 
-	netrc_, err := netrc.Parse(netrcPath)
+	netrc, err := libnetrc.Parse(netrcPath)
 	if err != nil {
 		return nil
 	}
 
-	return netrc_
+	return netrc
 }
 
 func getNetrcPath() string {
@@ -91,6 +91,7 @@ func getNetrcPath() string {
 	}
 
 	path = os.Getenv("CURLOPT_NETRC_FILE")
+
 	if path != "" {
 		return path
 	}
