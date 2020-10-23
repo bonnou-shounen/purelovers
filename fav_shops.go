@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Client) GetFavoriteShops() ([]*Shop, error) {
-	casts, lastPage, err := c.getFavoriteShops(1)
+	casts, lastPage, err := c.getFavoriteShopsOnPage(1)
 	if err != nil {
 		return nil, err
 	}
@@ -17,28 +17,28 @@ func (c *Client) GetFavoriteShops() ([]*Shop, error) {
 		return casts, nil
 	}
 
-	shopsList := make([][]*Shop, lastPage+1)
+	shopsOnPage := make([][]*Shop, lastPage+1)
 	swg := sizedwaitgroup.New(3)
 
 	for page := 2; page <= lastPage; page++ {
 		swg.Add()
 
-		go func(p int) {
+		go func(page int) {
 			defer swg.Done()
 
-			shopsList[p], _, _ = c.getFavoriteShops(p)
+			shopsOnPage[page], _, _ = c.getFavoriteShopsOnPage(page)
 		}(page)
 	}
 	swg.Wait()
 
 	for page := 2; page <= lastPage; page++ {
-		casts = append(casts, shopsList[page]...)
+		casts = append(casts, shopsOnPage[page]...)
 	}
 
 	return casts, nil
 }
 
-func (c *Client) getFavoriteShops(page int) ([]*Shop, int, error) {
+func (c *Client) getFavoriteShopsOnPage(page int) ([]*Shop, int, error) {
 	strURL := "https://www.purelovers.com/user/favorite-shop/"
 	if page > 1 {
 		strURL += fmt.Sprintf("index/page/%d/", page)

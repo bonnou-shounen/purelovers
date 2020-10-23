@@ -9,7 +9,7 @@ import (
 )
 
 func (c *Client) GetFavoriteCasts() ([]*Cast, error) {
-	casts, lastPage, err := c.getFavoriteCastsOfPage(1)
+	casts, lastPage, err := c.getFavoriteCastsOnPage(1)
 	if err != nil {
 		return nil, err
 	}
@@ -24,10 +24,10 @@ func (c *Client) GetFavoriteCasts() ([]*Cast, error) {
 	for page := 2; page <= lastPage; page++ {
 		swg.Add()
 
-		go func(p int) {
+		go func(page int) {
 			defer swg.Done()
 
-			castsOnPage[p], _, _ = c.getFavoriteCastsOfPage(p)
+			castsOnPage[page], _, _ = c.getFavoriteCastsOnPage(page)
 		}(page)
 	}
 	swg.Wait()
@@ -39,7 +39,7 @@ func (c *Client) GetFavoriteCasts() ([]*Cast, error) {
 	return casts, nil
 }
 
-func (c *Client) getFavoriteCastsOfPage(page int) ([]*Cast, int, error) {
+func (c *Client) getFavoriteCastsOnPage(page int) ([]*Cast, int, error) {
 	strURL := "https://www.purelovers.com/user/favorite-girl/"
 	if page > 1 {
 		strURL += fmt.Sprintf("index/page/%d/", page)
