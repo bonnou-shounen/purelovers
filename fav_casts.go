@@ -9,7 +9,9 @@ import (
 )
 
 func (c *Client) GetFavoriteCasts() ([]*Cast, error) {
-	casts, lastPage, err := c.getFavoriteCastsOnPage(1)
+	var lastPage int
+
+	casts, err := c.getFavoriteCastsOnPage(1, &lastPage)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +29,7 @@ func (c *Client) GetFavoriteCasts() ([]*Cast, error) {
 		go func(page int) {
 			defer swg.Done()
 
-			castsOnPage[page], _, _ = c.getFavoriteCastsOnPage(page)
+			castsOnPage[page], _ = c.getFavoriteCastsOnPage(page, nil)
 		}(page)
 	}
 	swg.Wait()
@@ -39,21 +41,16 @@ func (c *Client) GetFavoriteCasts() ([]*Cast, error) {
 	return casts, nil
 }
 
-func (c *Client) getFavoriteCastsOnPage(page int) ([]*Cast, int, error) {
-	strURL := "https://www.purelovers.com/user/favorite-girl/"
-	if page > 1 {
-		strURL += fmt.Sprintf("index/page/%d/", page)
-	}
-
-	resp, err := c.http.Get(strURL)
+func (c *Client) getFavoriteCastsOnPage(page int, pLastPage *int) ([]*Cast, error) {
+	resp, err := c.http.Get(fmt.Sprintf("https://www.purelovers.com/user/favorite-girl/index/page/%d/", page))
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	var casts []*Cast
@@ -69,14 +66,12 @@ func (c *Client) getFavoriteCastsOnPage(page int) ([]*Cast, int, error) {
 		}
 	})
 
-	if page > 1 {
-		return casts, 0, nil
+	if pLastPage != nil {
+		href, _ := doc.Find("ul.page-move li:last-child a").Attr("href")
+		*pLastPage = c.parseNumber(href, "/page/", "/")
 	}
 
-	href, _ := doc.Find("ul.page-move li:last-child a").Attr("href")
-	lastPage := c.parseNumber(href, "/page/", "/")
-
-	return casts, lastPage, nil
+	return casts, nil
 }
 
 func (c *Client) AddFavoriteCast(cast *Cast) error {

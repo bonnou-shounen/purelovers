@@ -8,7 +8,9 @@ import (
 )
 
 func (c *Client) GetFavoriteShops() ([]*Shop, error) {
-	casts, lastPage, err := c.getFavoriteShopsOnPage(1)
+	var lastPage int
+
+	casts, err := c.getFavoriteShopsOnPage(1, &lastPage)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +28,7 @@ func (c *Client) GetFavoriteShops() ([]*Shop, error) {
 		go func(page int) {
 			defer swg.Done()
 
-			shopsOnPage[page], _, _ = c.getFavoriteShopsOnPage(page)
+			shopsOnPage[page], _ = c.getFavoriteShopsOnPage(page, nil)
 		}(page)
 	}
 	swg.Wait()
@@ -38,21 +40,16 @@ func (c *Client) GetFavoriteShops() ([]*Shop, error) {
 	return casts, nil
 }
 
-func (c *Client) getFavoriteShopsOnPage(page int) ([]*Shop, int, error) {
-	strURL := "https://www.purelovers.com/user/favorite-shop/"
-	if page > 1 {
-		strURL += fmt.Sprintf("index/page/%d/", page)
-	}
-
-	resp, err := c.http.Get(strURL)
+func (c *Client) getFavoriteShopsOnPage(page int, pLastPage *int) ([]*Shop, error) {
+	resp, err := c.http.Get(fmt.Sprintf("https://www.purelovers.com/user/favorite-shop/index/page/%d/", page))
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	var shops []*Shop
@@ -67,14 +64,12 @@ func (c *Client) getFavoriteShopsOnPage(page int) ([]*Shop, int, error) {
 		}
 	})
 
-	if page > 1 {
-		return shops, 0, nil
+	if pLastPage != nil {
+		href, _ := doc.Find("ul.page-move li:last-child a").Attr("href")
+		*pLastPage = c.parseNumber(href, "/page/", "/")
 	}
 
-	href, _ := doc.Find("ul.page-move li:last-child a").Attr("href")
-	lastPage := c.parseNumber(href, "/page/", "/")
-
-	return shops, lastPage, nil
+	return shops, nil
 }
 
 func (c *Client) AddFavoriteShop(shop *Shop) error {
