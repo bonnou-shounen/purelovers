@@ -55,16 +55,16 @@ func (c *Client) Login(id, password string) error {
 }
 
 func (c *Client) ajax(strURL string, values url.Values) error {
-	values.Add("ui", c.ui)
-	values.Add("uci", c.uci)
+	values.Set("ui", c.ui)
+	values.Set("uci", c.uci)
 
 	req, err := http.NewRequest(http.MethodPost, strURL, strings.NewReader(values.Encode()))
 	if err != nil {
 		return err
 	}
 
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	req.Header.Add("X-Requested-With", "XMLHttpRequest")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
 	resp, err := c.http.Do(req)
 	if err != nil {
