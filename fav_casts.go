@@ -59,10 +59,10 @@ func (c *Client) getFavoriteCastsOnPage(page int, pLastPage *int) ([]*Cast, erro
 		href, _ := a.Attr("href")
 		shopID := c.parseNumber(href, "/shop/", "/")
 		castID := c.parseNumber(href, "/girl/", "/")
-		name := c.parseCastName(a.Text())
+		castName := c.parseCastName(a.Text())
 
-		if name != "" && shopID != 0 && castID != 0 {
-			casts = append(casts, &Cast{ShopID: shopID, CastID: castID, Name: name})
+		if castID != 0 && castName != "" && shopID != 0 {
+			casts = append(casts, &Cast{ID: castID, Name: castName, ShopID: shopID})
 		}
 	})
 

@@ -45,11 +45,9 @@ func (r *RestoreFavoriteShops) readShops(reader io.Reader) []*purelovers.Shop {
 
 		shopID, _ := strconv.Atoi(fields[0])
 
-		if !(shopID > 0) {
-			continue
+		if shopID != 0 {
+			shops = append(shops, &purelovers.Shop{ID: shopID})
 		}
-
-		shops = append(shops, &purelovers.Shop{ShopID: shopID})
 	}
 
 	return shops
@@ -64,7 +62,7 @@ func (r *RestoreFavoriteShops) shopsDiff(curShops, newShops []*purelovers.Shop) 
 		curShop := curShops[ic]
 		newShop := newShops[in]
 
-		if curShop.ShopID == newShop.ShopID {
+		if curShop.ID == newShop.ID {
 			ic--
 			in--
 

@@ -21,7 +21,7 @@ func (d *DumpFavoriteShops) Run() error {
 	}
 
 	for _, shop := range shops {
-		fmt.Fprintf(os.Stdout, "%d\t%s\n", shop.ShopID, shop.Name)
+		fmt.Fprintf(os.Stdout, "%d\t%s\n", shop.ID, shop.Name)
 	}
 
 	return nil

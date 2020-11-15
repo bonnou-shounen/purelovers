@@ -57,10 +57,10 @@ func (c *Client) getFavoriteShopsOnPage(page int, pLastPage *int) ([]*Shop, erro
 	doc.Find("p.shopList-nameDate a").Each(func(j int, a *goquery.Selection) {
 		href, _ := a.Attr("href")
 		shopID := c.parseNumber(href, "/shop/", "/")
-		name := a.Text()
+		shopName := a.Text()
 
-		if name != "" && shopID != 0 {
-			shops = append(shops, &Shop{ShopID: shopID, Name: name})
+		if shopID != 0 && shopName != "" {
+			shops = append(shops, &Shop{ID: shopID, Name: shopName})
 		}
 	})
 

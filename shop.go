@@ -6,12 +6,12 @@ import (
 )
 
 type Shop struct {
-	ShopID int
-	Name   string
+	ID   int
+	Name string
 }
 
 func (s *Shop) urlValues() url.Values {
 	return url.Values{
-		"shop_id": []string{fmt.Sprint(s.ShopID)},
+		"shop_id": []string{fmt.Sprint(s.ID)},
 	}
 }

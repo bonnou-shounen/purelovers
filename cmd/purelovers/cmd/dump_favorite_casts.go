@@ -21,7 +21,7 @@ func (d *DumpFavoriteCasts) Run() error {
 	}
 
 	for _, cast := range casts {
-		fmt.Fprintf(os.Stdout, "%d\t%d\t%s\n", cast.ShopID, cast.CastID, cast.Name)
+		fmt.Fprintf(os.Stdout, "%d\t%d\t%s\n", cast.ShopID, cast.ID, cast.Name)
 	}
 
 	return nil

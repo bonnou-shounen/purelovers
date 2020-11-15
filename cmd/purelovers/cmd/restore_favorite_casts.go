@@ -46,11 +46,9 @@ func (r *RestoreFavoriteCasts) readCasts(reader io.Reader) []*purelovers.Cast {
 		shopID, _ := strconv.Atoi(fields[0])
 		castID, _ := strconv.Atoi(fields[1])
 
-		if !(shopID > 0 && castID > 0) {
-			continue
+		if castID != 0 && shopID != 0 {
+			casts = append(casts, &purelovers.Cast{ID: castID, ShopID: shopID})
 		}
-
-		casts = append(casts, &purelovers.Cast{ShopID: shopID, CastID: castID})
 	}
 
 	return casts
@@ -65,7 +63,7 @@ func (r *RestoreFavoriteCasts) castsDiff(curCasts, newCasts []*purelovers.Cast) 
 		curCast := curCasts[ic]
 		newCast := newCasts[in]
 
-		if curCast.ShopID == newCast.ShopID && curCast.CastID == newCast.CastID {
+		if curCast.ID == newCast.ID && curCast.ShopID == newCast.ShopID {
 			ic--
 			in--
 
