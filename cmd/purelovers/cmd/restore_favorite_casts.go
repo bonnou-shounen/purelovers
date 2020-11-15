@@ -34,21 +34,32 @@ func (r *RestoreFavoriteCasts) Run() error {
 }
 
 func (r *RestoreFavoriteCasts) readCasts(reader io.Reader) []*purelovers.Cast {
-	casts := make([]*purelovers.Cast, 0)
+	var casts []*purelovers.Cast
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
-		if len(fields) < 2 {
+		fields = append(fields, "", "", "", "")
+
+		castID, _ := strconv.Atoi(fields[0])
+		shopID, _ := strconv.Atoi(fields[1])
+		castName := fields[2]
+		shopName := fields[3]
+
+		if castID == 0 || shopID == 0 {
 			continue
 		}
 
-		shopID, _ := strconv.Atoi(fields[0])
-		castID, _ := strconv.Atoi(fields[1])
-
-		if castID != 0 && shopID != 0 {
-			casts = append(casts, &purelovers.Cast{ID: castID, ShopID: shopID})
-		}
+		casts = append(casts,
+			&purelovers.Cast{
+				ID:   castID,
+				Name: castName,
+				Shop: &purelovers.Shop{
+					ID:   shopID,
+					Name: shopName,
+				},
+			},
+		)
 	}
 
 	return casts
@@ -63,7 +74,7 @@ func (r *RestoreFavoriteCasts) castsDiff(curCasts, newCasts []*purelovers.Cast) 
 		curCast := curCasts[ic]
 		newCast := newCasts[in]
 
-		if curCast.ID == newCast.ID && curCast.ShopID == newCast.ShopID {
+		if curCast.ID == newCast.ID && curCast.Shop.ID == newCast.Shop.ID {
 			ic--
 			in--
 

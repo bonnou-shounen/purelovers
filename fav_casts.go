@@ -55,15 +55,28 @@ func (c *Client) getFavoriteCastsOnPage(page int, pLastPage *int) ([]*Cast, erro
 
 	var casts []*Cast
 
-	doc.Find("div.girlList-girlDate a").Each(func(j int, a *goquery.Selection) {
+	doc.Find("ul.myGirlList li").Each(func(_ int, li *goquery.Selection) {
+		a := li.Find("div.girlList-girlDate a").First()
 		href, _ := a.Attr("href")
 		shopID := c.parseNumber(href, "/shop/", "/")
 		castID := c.parseNumber(href, "/girl/", "/")
 		castName := c.parseCastName(a.Text())
+		shopName := li.Find("div.girlList-shopDate a").First().Text()
 
-		if castID != 0 && castName != "" && shopID != 0 {
-			casts = append(casts, &Cast{ID: castID, Name: castName, ShopID: shopID})
+		if castID == 0 || castName == "" || shopID == 0 || shopName == "" {
+			return
 		}
+
+		casts = append(casts,
+			&Cast{
+				ID:   castID,
+				Name: castName,
+				Shop: &Shop{
+					ID:   shopID,
+					Name: shopName,
+				},
+			},
+		)
 	})
 
 	if pLastPage != nil {

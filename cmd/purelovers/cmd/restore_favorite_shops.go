@@ -34,20 +34,26 @@ func (r *RestoreFavoriteShops) Run() error {
 }
 
 func (r *RestoreFavoriteShops) readShops(reader io.Reader) []*purelovers.Shop {
-	shops := make([]*purelovers.Shop, 0)
+	var shops []*purelovers.Shop
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
-		if len(fields) < 1 {
+		fields = append(fields, "", "")
+
+		shopID, _ := strconv.Atoi(fields[0])
+		shopName := fields[1]
+
+		if shopID == 0 {
 			continue
 		}
 
-		shopID, _ := strconv.Atoi(fields[0])
-
-		if shopID != 0 {
-			shops = append(shops, &purelovers.Shop{ID: shopID})
-		}
+		shops = append(shops,
+			&purelovers.Shop{
+				ID:   shopID,
+				Name: shopName,
+			},
+		)
 	}
 
 	return shops
