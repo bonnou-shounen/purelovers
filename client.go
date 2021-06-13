@@ -2,7 +2,7 @@ package purelovers
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -72,7 +72,7 @@ func (c *Client) ajax(strURL string, values url.Values) error {
 	}
 	defer resp.Body.Close()
 
-	bin, err := ioutil.ReadAll(resp.Body)
+	bin, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

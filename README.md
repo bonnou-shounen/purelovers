@@ -5,7 +5,7 @@ cli for [purelovers](https://www.purelovers.com).
 ## install
 
 ```bash
-$ go get -u github.com/bonnou-shounen/purelovers/cmd/purelovers
+$ go install github.com/bonnou-shounen/purelovers/cmd/purelovers@latest
 ```
 
 ## usage
