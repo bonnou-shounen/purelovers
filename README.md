@@ -1,6 +1,6 @@
 # purelovers
 
-cli for [purelovers](https://www.purelovers.com).
+cli for [purelovers](https://purelovers.com).
 
 ## install
 

@@ -13,7 +13,7 @@ func main() {
 	ctx := kong.Parse(
 		&arg,
 		kong.Name("purelovers"),
-		kong.Vars{"version": "0.0.6"},
+		kong.Vars{"version": "0.1.0"},
 		kong.ShortUsageOnError(),
 	)
 

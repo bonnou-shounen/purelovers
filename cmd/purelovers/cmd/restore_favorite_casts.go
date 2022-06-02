@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bufio"
+	"context"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -14,21 +16,31 @@ import (
 type RestoreFavoriteCasts struct{}
 
 func (r *RestoreFavoriteCasts) Run() error {
+	ctx := context.Background()
+
 	newCasts := r.readCasts(os.Stdin)
 
-	c, err := util.NewLoggedClient()
+	c, err := util.NewLoggedClient(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("on NewLoggedClient(): %w", err)
 	}
 
-	curCasts, err := c.GetFavoriteCasts()
+	curCasts, err := c.GetFavoriteCasts(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("on GetFavoriteCasts(): %w", err)
 	}
 
-	delCasts, addCasts := r.castsDiff(curCasts, newCasts)
-	c.DeleteFavoriteCasts(delCasts)
-	c.AddFavoriteCasts(addCasts)
+	delCasts, addCasts := util.ListDiff(curCasts, newCasts,
+		func(a, b *purelovers.Cast) bool { return a.ID == b.ID && a.Shop.ID == b.Shop.ID },
+	)
+
+	if err := c.DeleteFavoriteCasts(ctx, delCasts); err != nil {
+		return fmt.Errorf("on DeleteFavoriteCasts(): %w", err)
+	}
+
+	if err := c.AddFavoriteCasts(ctx, addCasts); err != nil {
+		return fmt.Errorf("on AddFavoriteCasts(): %w", err)
+	}
 
 	return nil
 }
@@ -63,31 +75,4 @@ func (r *RestoreFavoriteCasts) readCasts(reader io.Reader) []*purelovers.Cast {
 	}
 
 	return casts
-}
-
-//nolint:lll
-func (r *RestoreFavoriteCasts) castsDiff(curCasts, newCasts []*purelovers.Cast) (delCasts, addCasts []*purelovers.Cast) {
-	ic := len(curCasts) - 1
-	in := len(newCasts) - 1
-
-	for ic >= 0 && in >= 0 {
-		curCast := curCasts[ic]
-		newCast := newCasts[in]
-
-		if curCast.ID == newCast.ID && curCast.Shop.ID == newCast.Shop.ID {
-			ic--
-			in--
-
-			continue
-		}
-
-		delCasts = append(delCasts, curCast)
-		ic--
-	}
-
-	if ic >= 0 {
-		delCasts = append(delCasts, curCasts[:ic+1]...)
-	}
-
-	return delCasts, newCasts[:in+1]
 }

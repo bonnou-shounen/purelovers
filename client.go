@@ -1,8 +1,8 @@
 package purelovers
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -14,8 +14,6 @@ import (
 
 type Client struct {
 	http *http.Client
-	ui   string
-	uci  string
 }
 
 func NewClient() *Client {
@@ -26,14 +24,14 @@ func NewClient() *Client {
 	}
 }
 
-func (c *Client) Login(id, password string) error {
+func (c *Client) Login(ctx context.Context, id, password string) error {
 	values := url.Values{
-		"id":            []string{id},
+		"mail_address":  []string{id},
 		"password":      []string{password},
 		"submit_button": []string{"ログイン"},
 	}
 
-	resp, err := c.http.PostForm("https://www.purelovers.com/user/login.html", values)
+	resp, err := c.post(ctx, "https://purelovers.com/user/login", values.Encode())
 	if err != nil {
 		return err
 	}
@@ -41,50 +39,49 @@ func (c *Client) Login(id, password string) error {
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		return err
+		return fmt.Errorf("on NewDocumentFromReader(): %w", err)
 	}
 
-	c.ui, _ = doc.Find(`input[name="ui"]`).Attr("value")
-	c.uci, _ = doc.Find(`input[name="uci"]`).Attr("value")
-
-	if c.ui == "" || c.uci == "" {
-		return fmt.Errorf("login failed")
-	}
-
-	return nil
-}
-
-func (c *Client) ajax(strURL string, values url.Values) error {
-	values.Set("ui", c.ui)
-	values.Set("uci", c.uci)
-
-	req, err := http.NewRequest(http.MethodPost, strURL, strings.NewReader(values.Encode()))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	req.Header.Set("X-Requested-With", "XMLHttpRequest")
-
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	bin, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if string(bin) != "1" {
-		return fmt.Errorf("ajax call returns: [%s]", bin)
+	title := doc.Find(`title`).Text()
+	if !strings.Contains(title, "マイページ") {
+		return fmt.Errorf("login failed: [%s]", title)
 	}
 
 	return nil
 }
 
-//nolint:unparam
+func (c *Client) get(ctx context.Context, strURL string, query string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprint(strURL, "?", query), nil)
+	if err != nil {
+		return nil, fmt.Errorf("on NewRequest(): %w", err)
+	}
+
+	req.Header.Set("x-requested-with", "XMLHttpRequest")
+
+	resp, err := c.http.Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("on http.Do(): %w", err)
+	}
+
+	return resp, nil
+}
+
+func (c *Client) post(ctx context.Context, strURL string, form string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodPost, strURL, strings.NewReader(form))
+	if err != nil {
+		return nil, fmt.Errorf("on NewRequest(): %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := c.http.Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("on http.Do(): %w", err)
+	}
+
+	return resp, nil
+}
+
 func (c *Client) parseNumber(str, prefix, suffix string) int {
 	if i := strings.Index(str, prefix); i >= 0 {
 		str = str[i+len(prefix):]

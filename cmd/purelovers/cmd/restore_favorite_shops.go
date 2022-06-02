@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bufio"
+	"context"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -14,21 +16,31 @@ import (
 type RestoreFavoriteShops struct{}
 
 func (r *RestoreFavoriteShops) Run() error {
+	ctx := context.Background()
+
 	newShops := r.readShops(os.Stdin)
 
-	c, err := util.NewLoggedClient()
+	c, err := util.NewLoggedClient(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("on NewLoggedClient(): %w", err)
 	}
 
-	curShops, err := c.GetFavoriteShops()
+	curShops, err := c.GetFavoriteShops(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("on GetFavoriteShops(): %w", err)
 	}
 
-	delShops, addShops := r.shopsDiff(curShops, newShops)
-	c.DeleteFavoriteShops(delShops)
-	c.AddFavoriteShops(addShops)
+	delShops, addShops := util.ListDiff(curShops, newShops,
+		func(a, b *purelovers.Shop) bool { return a.ID == b.ID },
+	)
+
+	if err := c.DeleteFavoriteShops(ctx, delShops); err != nil {
+		return fmt.Errorf("on DeleteFavoriteShops(): %w", err)
+	}
+
+	if err := c.AddFavoriteShops(ctx, addShops); err != nil {
+		return fmt.Errorf("on AddFavoriteShops(): %w", err)
+	}
 
 	return nil
 }
@@ -57,31 +69,4 @@ func (r *RestoreFavoriteShops) readShops(reader io.Reader) []*purelovers.Shop {
 	}
 
 	return shops
-}
-
-//nolint:lll
-func (r *RestoreFavoriteShops) shopsDiff(curShops, newShops []*purelovers.Shop) (delShops, addShops []*purelovers.Shop) {
-	ic := len(curShops) - 1
-	in := len(newShops) - 1
-
-	for ic >= 0 && in >= 0 {
-		curShop := curShops[ic]
-		newShop := newShops[in]
-
-		if curShop.ID == newShop.ID {
-			ic--
-			in--
-
-			continue
-		}
-
-		delShops = append(delShops, curShop)
-		ic--
-	}
-
-	if ic >= 0 {
-		delShops = append(delShops, curShops[:ic+1]...)
-	}
-
-	return delShops, newShops[:in+1]
 }

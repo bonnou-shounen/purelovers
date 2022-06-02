@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -10,14 +11,16 @@ import (
 type DumpFavoriteCasts struct{}
 
 func (d *DumpFavoriteCasts) Run() error {
-	c, err := util.NewLoggedClient()
+	ctx := context.Background()
+
+	c, err := util.NewLoggedClient(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("on NewLoggedClient(): %w", err)
 	}
 
-	casts, err := c.GetFavoriteCasts()
+	casts, err := c.GetFavoriteCasts(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("on GetFavoriteCasts(): %w", err)
 	}
 
 	for _, cast := range casts {

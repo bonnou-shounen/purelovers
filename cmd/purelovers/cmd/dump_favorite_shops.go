@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -10,14 +11,16 @@ import (
 type DumpFavoriteShops struct{}
 
 func (d *DumpFavoriteShops) Run() error {
-	c, err := util.NewLoggedClient()
+	ctx := context.Background()
+
+	c, err := util.NewLoggedClient(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("on NewLoggedClient(): %w", err)
 	}
 
-	shops, err := c.GetFavoriteShops()
+	shops, err := c.GetFavoriteShops(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("on GetFavoriteShops(): %w", err)
 	}
 
 	for _, shop := range shops {

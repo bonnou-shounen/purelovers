@@ -1,103 +1,163 @@
 package purelovers
 
 import (
+	"context"
 	"fmt"
+	"io"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/remeh/sizedwaitgroup"
+	"github.com/jesse0michael/errgroup"
 )
 
-func (c *Client) GetFavoriteShops() ([]*Shop, error) {
+func (c *Client) GetFavoriteShops(ctx context.Context) ([]*Shop, error) {
 	var lastPage int
 
-	casts, err := c.getFavoriteShopsOnPage(1, &lastPage)
+	shops, err := c.getFavoriteShopsOnPage(ctx, 1, &lastPage)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("on getFavoriteShopsOnPage(1): %w", err)
 	}
 
 	if lastPage <= 1 {
-		return casts, nil
+		return shops, nil
 	}
 
 	shopsOnPage := make([][]*Shop, lastPage+1)
-	swg := sizedwaitgroup.New(3)
+	eg, egCtx := errgroup.WithContext(ctx, 3)
 
 	for page := 2; page <= lastPage; page++ {
-		swg.Add()
+		page := page
 
-		go func(page int) {
-			defer swg.Done()
+		eg.Go(func() error {
+			shops, err := c.getFavoriteShopsOnPage(egCtx, page, nil)
+			if err != nil {
+				return fmt.Errorf("on getFavoriteShopsOnPage(%d): %w", page, err)
+			}
 
-			shopsOnPage[page], _ = c.getFavoriteShopsOnPage(page, nil)
-		}(page)
+			shopsOnPage[page] = shops
+
+			return nil
+		})
 	}
-	swg.Wait()
+
+	if err := eg.Wait(); err != nil {
+		return nil, fmt.Errorf("on goroutine: %w", err)
+	}
 
 	for page := 2; page <= lastPage; page++ {
-		casts = append(casts, shopsOnPage[page]...)
-	}
-
-	return casts, nil
-}
-
-func (c *Client) getFavoriteShopsOnPage(page int, pLastPage *int) ([]*Shop, error) {
-	resp, err := c.http.Get(fmt.Sprintf("https://www.purelovers.com/user/favorite-shop/index/page/%d/", page))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var shops []*Shop
-
-	doc.Find("p.shopList-nameDate a").Each(func(j int, a *goquery.Selection) {
-		href, _ := a.Attr("href")
-		shopID := c.parseNumber(href, "/shop/", "/")
-		shopName := a.Text()
-
-		if shopID != 0 && shopName != "" {
-			shops = append(shops, &Shop{ID: shopID, Name: shopName})
-		}
-	})
-
-	if pLastPage != nil {
-		href, _ := doc.Find("ul.page-move li:last-child a").Attr("href")
-		*pLastPage = c.parseNumber(href, "/page/", "/")
+		shops = append(shops, shopsOnPage[page]...)
 	}
 
 	return shops, nil
 }
 
-func (c *Client) AddFavoriteShop(shop *Shop) error {
-	return c.ajax("https://www.purelovers.com/ajax/user/regist-favorite-shop/", shop.urlValues())
-}
+func (c *Client) getFavoriteShopsOnPage(ctx context.Context, page int, pLastPage *int) ([]*Shop, error) {
+	strURL := fmt.Sprintf("https://purelovers.com/user/favorite-shop/pg%d/", page)
 
-func (c *Client) DeleteFavoriteShop(shop *Shop) error {
-	return c.ajax("https://www.purelovers.com/ajax/user-my-page/shop-delete/", shop.urlValues())
-}
-
-func (c *Client) AddFavoriteShops(shops []*Shop) {
-	for i := len(shops) - 1; i >= 0; i-- {
-		c.AddFavoriteShop(shops[i]) //nolint:errcheck
+	resp, err := c.get(ctx, strURL, "")
+	if err != nil {
+		return nil, fmt.Errorf(`on get("%s"): %w`, strURL, err)
 	}
+	defer resp.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("on NewDocumentFromReader(): %w", err)
+	}
+
+	var shops []*Shop
+
+	doc.Find("div.k_row-grid--small a.k_box").Each(func(_ int, a *goquery.Selection) {
+		href, _ := a.Attr("href")
+		shopID := c.parseNumber(href, "/shop/", "/")
+		shopName := a.Find("span.k_text--xlarge").Text()
+
+		if shopID == 0 || shopName == "" {
+			return
+		}
+
+		shops = append(shops,
+			&Shop{
+				ID:   shopID,
+				Name: shopName,
+			},
+		)
+	})
+
+	if pLastPage != nil {
+		text, _ := doc.Find("div.k_searchResult p").Html()
+		*pLastPage = (c.parseNumber(text, "", "件") + 19) / 20
+	}
+
+	return shops, nil
 }
 
-func (c *Client) DeleteFavoriteShops(shops []*Shop) {
-	swg := sizedwaitgroup.New(5)
+func (c *Client) AddFavoriteShop(ctx context.Context, shop *Shop) error {
+	time.Sleep(1 * time.Second)
+
+	return c.modFavoriteShop(ctx, shop, "set-follow")
+}
+
+func (c *Client) DeleteFavoriteShop(ctx context.Context, shop *Shop) error {
+	return c.modFavoriteShop(ctx, shop, "delete-follow")
+}
+
+func (c *Client) modFavoriteShop(ctx context.Context, shop *Shop, operation string) error {
+	strURL := fmt.Sprintf(
+		"https://purelovers.com/shop/%d/%s/?_=%d",
+		shop.ID,
+		operation,
+		time.Now().UnixMilli(),
+	)
+
+	resp, err := c.get(ctx, strURL, "")
+	if err != nil {
+		return fmt.Errorf(`on get("%s"): %w`, strURL, err)
+	}
+	defer resp.Body.Close()
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("on ReadAll(): %w", err)
+	}
+
+	if string(b) != "true" {
+		return fmt.Errorf("on ReadAll(): invalid response [%s]", b)
+	}
+
+	return nil
+}
+
+func (c *Client) AddFavoriteShops(ctx context.Context, shops []*Shop) error {
+	for i := len(shops) - 1; i >= 0; i-- {
+		shop := shops[i]
+
+		if err := c.AddFavoriteShop(ctx, shop); err != nil {
+			return fmt.Errorf("on AddFavoriteShop(%d=%s): %w", shop.ID, shop.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) DeleteFavoriteShops(ctx context.Context, shops []*Shop) error {
+	eg, egCtx := errgroup.WithContext(ctx, 5)
 
 	for _, shop := range shops {
-		swg.Add()
+		shop := shop
 
-		go func(shop *Shop) {
-			defer swg.Done()
+		eg.Go(func() error {
+			if err := c.DeleteFavoriteShop(egCtx, shop); err != nil {
+				return fmt.Errorf("on DeleteFavoriteShop(%d=%s): %w", shop.ID, shop.Name, err)
+			}
 
-			c.DeleteFavoriteShop(shop) //nolint:errcheck
-		}(shop)
+			return nil
+		})
 	}
 
-	swg.Wait()
+	if err := eg.Wait(); err != nil {
+		return fmt.Errorf("on goroutine: %w", err)
+	}
+
+	return nil
 }

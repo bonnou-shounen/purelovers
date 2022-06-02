@@ -1,8 +1,10 @@
 package purelovers
 
 import (
+	"context"
 	"fmt"
-	"net/url"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 type Shop struct {
@@ -10,8 +12,21 @@ type Shop struct {
 	Name string
 }
 
-func (s *Shop) urlValues() url.Values {
-	return url.Values{
-		"shop_id": []string{fmt.Sprint(s.ID)},
+func (c *Client) getShopName(ctx context.Context, shopID int) (string, error) {
+	strURL := fmt.Sprintf("https://purelovers.com/shop/%d", shopID)
+
+	resp, err := c.get(ctx, strURL, "")
+	if err != nil {
+		return "", fmt.Errorf(`on get("%s"): %w`, strURL, err)
 	}
+	defer resp.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("on NewDocumentFromReader(): %w", err)
+	}
+
+	shopName := doc.Find("h1.k_title").Text()
+
+	return shopName, nil
 }

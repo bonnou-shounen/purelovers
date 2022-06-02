@@ -6,7 +6,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/alecthomas/kong v0.5.0
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
-	github.com/remeh/sizedwaitgroup v1.0.0
+	github.com/jesse0michael/errgroup v1.1.0
 )
 
 require (
