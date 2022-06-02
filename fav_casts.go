@@ -174,7 +174,9 @@ func (c *Client) DeleteFavoriteCasts(ctx context.Context, casts []*Cast) error {
 func (c *Client) getShopNames(ctx context.Context, casts []*Cast) error {
 	shopNameOf := map[int]string{}
 	for _, cast := range casts {
-		shopNameOf[cast.Shop.ID] = ""
+		if shopNameOf[cast.Shop.ID] == "" {
+			shopNameOf[cast.Shop.ID] = cast.Shop.Name
+		}
 	}
 
 	eg, egCtx := errgroup.WithContext(ctx, 3)
@@ -182,16 +184,18 @@ func (c *Client) getShopNames(ctx context.Context, casts []*Cast) error {
 	for shopID := range shopNameOf {
 		shopID := shopID
 
-		eg.Go(func() error {
-			shopName, err := c.getShopName(egCtx, shopID)
-			if err != nil {
-				return fmt.Errorf("on getShopName(%d): %w", shopID, err)
-			}
+		if shopNameOf[shopID] == "" {
+			eg.Go(func() error {
+				shopName, err := c.getShopName(egCtx, shopID)
+				if err != nil {
+					return fmt.Errorf("on getShopName(%d): %w", shopID, err)
+				}
 
-			shopNameOf[shopID] = shopName
+				shopNameOf[shopID] = shopName
 
-			return nil
-		})
+				return nil
+			})
+		}
 	}
 
 	if err := eg.Wait(); err != nil {
@@ -199,7 +203,9 @@ func (c *Client) getShopNames(ctx context.Context, casts []*Cast) error {
 	}
 
 	for _, cast := range casts {
-		cast.Shop.Name = shopNameOf[cast.Shop.ID]
+		if cast.Shop.Name == "" {
+			cast.Shop.Name = shopNameOf[cast.Shop.ID]
+		}
 	}
 
 	return nil
