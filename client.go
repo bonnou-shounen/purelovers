@@ -31,9 +31,11 @@ func (c *Client) Login(ctx context.Context, id, password string) error {
 		"submit_button": []string{"ログイン"},
 	}
 
-	resp, err := c.post(ctx, "https://purelovers.com/user/login", values.Encode())
+	strURL := "https://purelovers.com/user/login"
+
+	resp, err := c.post(ctx, strURL, values.Encode())
 	if err != nil {
-		return err
+		return fmt.Errorf(`on post("%s"): %w`, strURL, err)
 	}
 	defer resp.Body.Close()
 
