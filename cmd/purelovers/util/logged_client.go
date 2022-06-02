@@ -11,13 +11,13 @@ import (
 )
 
 func NewLoggedClient(ctx context.Context) (*purelovers.Client, error) {
-	id, password := getCredential()
-	if id == "" || password == "" {
+	loginID, password := getCredential()
+	if loginID == "" || password == "" {
 		return nil, fmt.Errorf("missing credentials")
 	}
 
 	client := purelovers.NewClient()
-	if err := client.Login(ctx, id, password); err != nil {
+	if err := client.Login(ctx, loginID, password); err != nil {
 		return nil, fmt.Errorf("on NewClient(): %w", err)
 	}
 
@@ -25,36 +25,36 @@ func NewLoggedClient(ctx context.Context) (*purelovers.Client, error) {
 }
 
 func getCredential() (string, string) {
-	var id, password string
+	var loginID, password string
 
 	getters := []func() (string, string){
 		fromEnv,
 		fromNetrc,
 	}
 	for _, getter := range getters {
-		if id != "" && password != "" {
+		if loginID != "" && password != "" {
 			break
 		}
 
-		i, p := getter()
+		id, pwd := getter()
 
-		if id == "" {
-			id = i
+		if loginID == "" {
+			loginID = id
 		}
 
 		if password == "" {
-			password = p
+			password = pwd
 		}
 	}
 
-	return id, password
+	return loginID, password
 }
 
 func fromEnv() (string, string) {
-	id := os.Getenv("PURELOVERS_LOGIN")
+	loginID := os.Getenv("PURELOVERS_LOGIN")
 	password := os.Getenv("PURELOVERS_PASSWORD")
 
-	return id, password
+	return loginID, password
 }
 
 func fromNetrc() (string, string) {
@@ -68,10 +68,10 @@ func fromNetrc() (string, string) {
 		return "", ""
 	}
 
-	id := machine.Get("login")
+	loginID := machine.Get("login")
 	password := machine.Get("password")
 
-	return id, password
+	return loginID, password
 }
 
 func getNetrc() *libnetrc.Netrc {

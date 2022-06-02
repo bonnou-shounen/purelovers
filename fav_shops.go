@@ -122,7 +122,7 @@ func (c *Client) modFavoriteShop(ctx context.Context, shop *Shop, operation stri
 	}
 
 	if string(b) != "true" {
-		return fmt.Errorf("on ReadAll(): invalid response [%s]", b)
+		return fmt.Errorf("invalid response [%s]", b)
 	}
 
 	return nil

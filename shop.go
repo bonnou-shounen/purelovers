@@ -13,7 +13,7 @@ type Shop struct {
 }
 
 func (c *Client) getShopName(ctx context.Context, shopID int) (string, error) {
-	strURL := fmt.Sprintf("https://purelovers.com/shop/%d", shopID)
+	strURL := fmt.Sprint("https://purelovers.com/shop/", shopID, "/")
 
 	resp, err := c.get(ctx, strURL, "")
 	if err != nil {

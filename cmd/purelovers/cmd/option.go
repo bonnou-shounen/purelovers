@@ -5,7 +5,6 @@ type Option struct {
 	Password string `short:"p" help:"Password."`
 }
 
-//nolint:maligned
 type Arg struct {
 	Option
 	Dump struct {

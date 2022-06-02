@@ -1,7 +1,6 @@
 package util
 
-//nolint:nonamedreturns
-func ListDiff[T any](curList, newList []*T, equals func(a, b *T) bool) (delList, addList []*T) {
+func ListDiff[T any](curList, newList []*T, equals func(a, b *T) bool) (delList, addList []*T) { //nolint:nonamedreturns
 	ic := len(curList) - 1
 	in := len(newList) - 1
 
