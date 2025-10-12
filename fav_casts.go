@@ -26,8 +26,6 @@ func (c *Client) GetFavoriteCasts(ctx context.Context) ([]*Cast, error) {
 	eg, egCtx := errgroup.WithContext(ctx, 3)
 
 	for page := 2; page <= lastPage; page++ {
-		page := page
-
 		eg.Go(func() error {
 			casts, err := c.getFavoriteCastsOnPage(egCtx, page, nil)
 			if err != nil {
@@ -153,8 +151,6 @@ func (c *Client) DeleteFavoriteCasts(ctx context.Context, casts []*Cast) error {
 	eg, egCtx := errgroup.WithContext(ctx, 5)
 
 	for _, cast := range casts {
-		cast := cast
-
 		eg.Go(func() error {
 			if err := c.DeleteFavoriteCast(egCtx, cast); err != nil {
 				return fmt.Errorf("on DeleteFavoriteCast(%d=%s): %w", cast.ID, cast.Name, err)
@@ -182,8 +178,6 @@ func (c *Client) getShopNames(ctx context.Context, casts []*Cast) error {
 	eg, egCtx := errgroup.WithContext(ctx, 3)
 
 	for shopID := range shopNameOf {
-		shopID := shopID
-
 		if shopNameOf[shopID] == "" {
 			eg.Go(func() error {
 				shopName, err := c.getShopName(egCtx, shopID)

@@ -26,12 +26,11 @@ func NewClient() *Client {
 
 func (c *Client) Login(ctx context.Context, id, password string) error {
 	values := url.Values{
-		"mail_address":  []string{id},
-		"password":      []string{password},
-		"submit_button": []string{"ログイン"},
+		"mail_address": []string{id},
+		"password":     []string{password},
 	}
 
-	strURL := "https://purelovers.com/user/login"
+	strURL := "https://purelovers.com/user/login/"
 
 	resp, err := c.post(ctx, strURL, values.Encode())
 	if err != nil {
@@ -52,15 +51,16 @@ func (c *Client) Login(ctx context.Context, id, password string) error {
 	return nil
 }
 
+//nolint:unparam
 func (c *Client) get(ctx context.Context, strURL string, query string) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprint(strURL, "?", query), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprint(strURL, "?", query), nil)
 	if err != nil {
 		return nil, fmt.Errorf("on NewRequest(): %w", err)
 	}
 
-	req.Header.Set("x-requested-with", "XMLHttpRequest")
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
-	resp, err := c.http.Do(req.WithContext(ctx))
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("on http.Do(): %w", err)
 	}
@@ -69,14 +69,14 @@ func (c *Client) get(ctx context.Context, strURL string, query string) (*http.Re
 }
 
 func (c *Client) post(ctx context.Context, strURL string, form string) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodPost, strURL, strings.NewReader(form))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strURL, strings.NewReader(form))
 	if err != nil {
 		return nil, fmt.Errorf("on NewRequest(): %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := c.http.Do(req.WithContext(ctx))
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("on http.Do(): %w", err)
 	}

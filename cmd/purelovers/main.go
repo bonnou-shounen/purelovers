@@ -17,12 +17,12 @@ func main() {
 		kong.ShortUsageOnError(),
 	)
 
-	if arg.Option.Login != "" {
-		os.Setenv("PURELOVERS_LOGIN", arg.Option.Login)
+	if arg.Login != "" {
+		os.Setenv("PURELOVERS_LOGIN", arg.Login)
 	}
 
-	if arg.Option.Password != "" {
-		os.Setenv("PURELOVERS_PASSWORD", arg.Option.Password)
+	if arg.Password != "" {
+		os.Setenv("PURELOVERS_PASSWORD", arg.Password)
 	}
 
 	ctx.FatalIfErrorf(ctx.Run(&arg.Option))

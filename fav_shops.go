@@ -26,8 +26,6 @@ func (c *Client) GetFavoriteShops(ctx context.Context) ([]*Shop, error) {
 	eg, egCtx := errgroup.WithContext(ctx, 3)
 
 	for page := 2; page <= lastPage; page++ {
-		page := page
-
 		eg.Go(func() error {
 			shops, err := c.getFavoriteShopsOnPage(egCtx, page, nil)
 			if err != nil {
@@ -144,8 +142,6 @@ func (c *Client) DeleteFavoriteShops(ctx context.Context, shops []*Shop) error {
 	eg, egCtx := errgroup.WithContext(ctx, 5)
 
 	for _, shop := range shops {
-		shop := shop
-
 		eg.Go(func() error {
 			if err := c.DeleteFavoriteShop(egCtx, shop); err != nil {
 				return fmt.Errorf("on DeleteFavoriteShop(%d=%s): %w", shop.ID, shop.Name, err)
