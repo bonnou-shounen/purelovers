@@ -3,7 +3,7 @@ before:
   hooks:
     - go mod tidy
 builds:
-  - main: ./cmd/bakusai/main.go
+  - main: ./cmd/purelovers/main.go
     env:
       - CGO_ENABLED=0
     flags:
@@ -20,7 +20,7 @@ builds:
 archives:
   - formats: [ zip ]
 homebrew_casks:
-  - description: cli for bakusai.com
+  - description: cli for purelovers.com
     repository:
       owner: bonnou-shounen
       name: homebrew-tap
