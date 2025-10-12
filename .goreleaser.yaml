@@ -1,0 +1,33 @@
+version: 2
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - main: ./cmd/bakusai/main.go
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+archives:
+  - formats: [ zip ]
+homebrew_casks:
+  - description: cli for bakusai.com
+    repository:
+      owner: bonnou-shounen
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_APP_TOKEN }}"
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/purelovers"]
+          end
